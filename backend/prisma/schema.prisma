@@ -1,0 +1,86 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                       String                    @id @default(uuid())
+  name                     String?
+  email                    String?                   @unique
+  googleId                 String?                   @unique
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  tasks                    ScheduledTask[]
+  todos                    Todo[]
+  bucketItems              BucketItem[]
+  googleCalendarConnection GoogleCalendarConnection?
+}
+
+model ScheduledTask {
+  id            String    @id @default(uuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?
+  date          String
+  startTime     String
+  endTime       String
+  priority      String    @default("MEDIUM")
+  status        String    @default("TODO")
+  category      String?
+  googleEventId String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  completedAt   DateTime?
+
+  @@index([userId, date])
+}
+
+model Todo {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  dueDate     String?
+  priority    String    @default("MEDIUM")
+  status      String    @default("TODO")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([userId, status])
+}
+
+model BucketItem {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  category    String?
+  targetDate  String?
+  status      String    @default("PLANNED")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  completedAt DateTime?
+
+  @@index([userId, status])
+}
+
+model GoogleCalendarConnection {
+  id              String    @id @default(uuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  googleAccountId String?
+  calendarId      String    @default("primary")
+  accessToken     String?
+  refreshToken    String?
+  tokenExpiry     BigInt?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
